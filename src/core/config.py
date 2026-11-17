@@ -21,6 +21,25 @@ def _config_dir() -> str:
     return base
 
 
+def archive_file(mode: str) -> str:
+    """Histórico de itens já baixados ("pular já baixados"). Fica na pasta privada do app:
+    no Android a pasta Download pode ter arquivos de uma instalação anterior que o app
+    não consegue mais abrir."""
+    return os.path.join(_config_dir(), f"baixados-{mode}.txt")
+
+
+def dir_writable(path: str) -> bool:
+    try:
+        os.makedirs(path, exist_ok=True)
+        test = os.path.join(path, ".mediaget-teste")
+        with open(test, "w") as f:
+            f.write("ok")
+        os.remove(test)
+        return True
+    except OSError:
+        return False
+
+
 def default_download_dir() -> str:
     if is_android():
         candidates = ["/storage/emulated/0/Download/MediaGet", "/sdcard/Download/MediaGet"]

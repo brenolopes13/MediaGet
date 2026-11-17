@@ -8,6 +8,7 @@ import re
 import flet as ft
 
 from core import presets as P
+from core.config import archive_file
 from core.downloader import (DownloadJob, DownloadOptions, analyze, find_ffmpeg, fmt_duration,
                              preview_path, resolve_templates)
 from ui.common import AppContext, dropdown, section, mounted, safe_update
@@ -341,7 +342,7 @@ class DownloadView:
                 metadata_subfolder=s.metadata_subfolder, music_mode=s.music_mode,
                 playlist_items=items if single else "", is_playlist=is_pl,
                 ffmpeg=ff, cookies_file=s.cookies_file,
-                archive_file=os.path.join(s.download_dir, f".mediaget-arquivo-{s.mode}.txt") if s.use_archive else "",
+                archive_file=archive_file(s.mode) if s.use_archive else "",
             )
             title = self.info["title"] if single else u
             self.ctx.manager.add(DownloadJob(options=opts, title=title))

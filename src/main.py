@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import flet as ft  # noqa: E402
 
-from core.config import Settings  # noqa: E402
+from core.config import Settings, is_android  # noqa: E402
 from core.downloader import DownloadManager  # noqa: E402
 from ui.common import AppContext  # noqa: E402
 from ui.download_view import DownloadView  # noqa: E402
@@ -143,6 +143,12 @@ def main(page: ft.Page):
                     pass
 
     page.run_task(ticker)
+
+    if is_android():
+        from ui.android_access import AndroidAccess
+
+        access = AndroidAccess(ctx)
+        page.run_task(access.check)
 
 
 if __name__ == "__main__":

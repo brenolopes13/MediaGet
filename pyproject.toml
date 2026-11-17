@@ -1,6 +1,6 @@
 [project]
 name = "mediaget"
-version = "1.2.0"
+version = "1.2.1"
 description = "Baixador de áudio e vídeo com interface gráfica, baseado no yt-dlp"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -31,6 +31,8 @@ dependencies = ["imageio-ffmpeg>=0.5", "pillow>=10"]
 # legacy_packaging faz o Android extrair as libs para uma pasta onde o app pode executá-las.
 [tool.flet.android]
 legacy_packaging = true
+# pede "acesso a todos os arquivos" (gravar em Download/MediaGet e ler a biblioteca)
+dependencies = ["flet-permission-handler>=1.1.2"]
 
 # Permissões necessárias no Android (internet + gravar na pasta Download)
 [tool.flet.android.permission]
