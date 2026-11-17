@@ -55,9 +55,27 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - name: Cache do ffmpeg para Android
+        id: ffcache
+        uses: actions/cache@v4
+        with:
+          path: out/jniLibs
+          key: ffmpeg-android-${{ hashFiles('android/build-ffmpeg.sh') }}
+      - name: Compilar ffmpeg para Android
+        if: steps.ffcache.outputs.cache-hit != 'true'
+        run: |
+          export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_HOME}"
+          bash android/build-ffmpeg.sh arm64-v8a armeabi-v7a
+      - name: Colocar o ffmpeg no projeto Android
+        run: |
+          mkdir -p build/flutter/android/app/src/main/jniLibs
+          cp -r out/jniLibs/* build/flutter/android/app/src/main/jniLibs/
+          find build/flutter/android/app/src/main/jniLibs -type f -exec ls -la {} \;
       - run: pip install "flet[all]==${FLET_VERSION}"
       - name: flet build apk
         run: flet build apk --yes --verbose
+      - name: Conferir ffmpeg dentro do APK
+        run: unzip -l build/apk/*.apk | grep libffmpeg.so
       - name: Empacotar
         run: |
           mkdir -p dist

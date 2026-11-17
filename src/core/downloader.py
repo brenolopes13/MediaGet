@@ -13,12 +13,44 @@ import yt_dlp
 from yt_dlp.postprocessor.metadataparser import MetadataParserPP
 from yt_dlp.utils import DownloadCancelled
 
+from .config import is_android
 from .presets import FILE_PRESETS, FOLDER_PRESETS, SAMPLE_INFO
 
 
 # --------------------------------------------------------------------------- ffmpeg
+_android_ff: Optional[str] = None
+
+
+def _android_ffmpeg() -> Optional[str]:
+    """No Android o ffmpeg vem dentro do APK como lib/<abi>/libffmpeg.so.
+
+    O Android extrai as libs nativas para uma pasta de onde é permitido executar
+    programas; ela é a mesma das libs já carregadas pelo app (vista em /proc/self/maps).
+    """
+    global _android_ff
+    if _android_ff is not None:
+        return _android_ff or None
+    _android_ff = ""
+    try:
+        with open("/proc/self/maps", encoding="utf-8", errors="ignore") as f:
+            dirs = {os.path.dirname(line.split()[-1]) for line in f
+                    if line.rstrip().endswith(".so") and "/lib/" in line}
+        for d in dirs:
+            p = os.path.join(d, "libffmpeg.so")
+            if os.path.isfile(p) and os.access(p, os.X_OK):
+                _android_ff = p
+                break
+    except OSError:
+        pass
+    return _android_ff or None
+
+
 def find_ffmpeg(custom: str = "") -> Optional[str]:
-    """Procura o ffmpeg: caminho configurado > PATH > pacote imageio-ffmpeg."""
+    """Procura o ffmpeg: caminho configurado > embutido no APK > PATH > pacote imageio-ffmpeg."""
+    if is_android():
+        ff = _android_ffmpeg()
+        if ff:
+            return ff
     if custom:
         if os.path.isdir(custom):
             for name in ("ffmpeg.exe", "ffmpeg"):

@@ -11,7 +11,7 @@ Baixe a versão mais recente na página de [Releases](../../releases/latest):
 |---|---|---|
 | Windows 10/11 (64 bits) | `MediaGet-Windows-x64.zip` | Extraia e abra `mediaget.exe`. Já vem com ffmpeg. |
 | Linux (64 bits) | `MediaGet-Linux-x64.tar.gz` | `tar -xzf MediaGet-Linux-x64.tar.gz` e rode `MediaGet/mediaget`. O player usa GStreamer (`sudo apt install gstreamer1.0-plugins-good gstreamer1.0-libav`). |
-| Android 7+ | `MediaGet-Android.apk` | Copie para o celular e instale (permita "instalar apps desconhecidos"). |
+| Android 7+ | `MediaGet-Android.apk` | Copie para o celular e instale (permita "instalar apps desconhecidos"). Já vem com ffmpeg. |
 
 As três versões são geradas automaticamente pelo GitHub Actions (`.github/workflows/build.yml`) a cada tag `v*`.
 
@@ -82,8 +82,10 @@ O resultado fica em `build/<plataforma>/`. As permissões do Android já estão 
 
 * Os arquivos vão para `Download/MediaGet` no armazenamento interno. Se o Android bloquear a gravação, abra
   *Configurações → Apps → MediaGet → Permissões* e permita o acesso aos arquivos.
-* Não existe ffmpeg no Android dentro do app, então ele baixa no formato nativo do site
-  (normalmente MP4 para vídeo e M4A/Opus para áudio), sem converter. Metadados podem ser salvos como `.info.json`.
+* O APK já traz o **ffmpeg embutido** (com MP3 via LAME) para celulares ARM (arm64 e armv7): converte formatos,
+  junta vídeo + áudio em alta qualidade e embute capa/metadados, igual ao computador.
+  Ele é compilado pelo `android/build-ffmpeg.sh` no GitHub Actions e entra no APK como `lib/<abi>/libffmpeg.so`
+  (com `legacy_packaging = true` o Android instala esse arquivo numa pasta de onde o app pode executá-lo).
 * O yt-dlp fica embutido no APK. Para atualizá-lo, gere um APK novo com a versão mais recente.
 
 ## Estrutura do projeto

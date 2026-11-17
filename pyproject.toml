@@ -1,6 +1,6 @@
 [project]
 name = "mediaget"
-version = "1.1.0"
+version = "1.2.0"
 description = "Baixador de áudio e vídeo com interface gráfica, baseado no yt-dlp"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,6 +26,11 @@ dependencies = ["imageio-ffmpeg>=0.5", "pillow>=10"]
 
 [tool.flet.linux]
 dependencies = ["imageio-ffmpeg>=0.5", "pillow>=10"]
+
+# Android: o ffmpeg vai em jniLibs como libffmpeg.so (ver android/build-ffmpeg.sh).
+# legacy_packaging faz o Android extrair as libs para uma pasta onde o app pode executá-las.
+[tool.flet.android]
+legacy_packaging = true
 
 # Permissões necessárias no Android (internet + gravar na pasta Download)
 [tool.flet.android.permission]

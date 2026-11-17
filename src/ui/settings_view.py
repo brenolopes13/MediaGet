@@ -52,8 +52,8 @@ class SettingsView:
             section("ffmpeg (conversão e metadados)",
                     ft.Row([self.ff, browse_ff]), self.ff_status,
                     ft.Text("No Windows/Linux: instale o ffmpeg (winget install ffmpeg / sudo apt install ffmpeg) "
-                            "ou o pacote Python 'imageio-ffmpeg'. No Android o app funciona sem ffmpeg, "
-                            "baixando nos formatos nativos.", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
+                            "ou o pacote Python 'imageio-ffmpeg'. As versões Windows e Android já trazem "
+                            "o ffmpeg embutido.", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
                     icon=ft.Icons.BUILD),
             section("Aparência", self.theme, icon=ft.Icons.PALETTE),
             section("Sobre", self.version, ft.Row([self.update_btn]),
