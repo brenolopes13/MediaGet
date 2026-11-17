@@ -1,0 +1,6 @@
+flet[all]>=1.1.2
+yt-dlp>=2025.1.1
+mutagen>=1.47
+flet-audio>=1.1.2  # player de música da Biblioteca
+pillow>=10  # opcional: reduz as capas do catálogo
+imageio-ffmpeg>=0.5  # ffmpeg pronto para Windows/Linux (não usado no Android)

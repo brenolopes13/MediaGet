@@ -1,0 +1,37 @@
+[project]
+name = "mediaget"
+version = "1.1.0"
+description = "Baixador de áudio e vídeo com interface gráfica, baseado no yt-dlp"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "flet>=1.1.2",
+  "yt-dlp>=2025.1.1",
+  "mutagen>=1.47",
+  "flet-audio>=1.1.2",
+]
+
+[tool.flet]
+org = "com.mediaget"
+product = "MediaGet"
+company = "MediaGet"
+copyright = "MediaGet"
+
+[tool.flet.app]
+path = "src"
+
+# ffmpeg embutido só nas versões de computador (no Android não existe binário)
+[tool.flet.windows]
+dependencies = ["imageio-ffmpeg>=0.5", "pillow>=10"]
+
+[tool.flet.linux]
+dependencies = ["imageio-ffmpeg>=0.5", "pillow>=10"]
+
+# Permissões necessárias no Android (internet + gravar na pasta Download)
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+"android.permission.READ_EXTERNAL_STORAGE" = true
+"android.permission.WRITE_EXTERNAL_STORAGE" = true
+"android.permission.MANAGE_EXTERNAL_STORAGE" = true
+"android.permission.FOREGROUND_SERVICE" = true
+"android.permission.WAKE_LOCK" = true

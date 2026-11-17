@@ -1,0 +1,99 @@
+name: Build
+
+# Gera as versões Windows, Linux e Android.
+# - Execução manual (aba Actions → Build → Run workflow): arquivos ficam em "Artifacts".
+# - Ao enviar uma tag "v*" (ex.: v1.1.0): cria um Release com os três downloads.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FLET_VERSION: "1.1.2"
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: "1"
+
+jobs:
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependências do Flutter para Linux
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libmpv-dev mpv
+      - run: pip install "flet[all]==${FLET_VERSION}"
+      - name: flet build linux
+        run: flet build linux --yes --verbose
+      - name: Empacotar
+        run: |
+          mkdir -p dist
+          cp -r build/linux MediaGet
+          tar -czf dist/MediaGet-Linux-x64.tar.gz MediaGet
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaGet-Linux-x64
+          path: dist/MediaGet-Linux-x64.tar.gz
+
+  android:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: pip install "flet[all]==${FLET_VERSION}"
+      - name: flet build apk
+        run: flet build apk --yes --verbose
+      - name: Empacotar
+        run: |
+          mkdir -p dist
+          cp build/apk/*.apk dist/MediaGet-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaGet-Android
+          path: dist/MediaGet-Android.apk
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "flet[all]==$env:FLET_VERSION"
+      - name: flet build windows
+        run: flet build windows --yes --verbose
+      - name: Empacotar
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path build\windows\* -DestinationPath dist\MediaGet-Windows-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaGet-Windows-x64
+          path: dist/MediaGet-Windows-x64.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
