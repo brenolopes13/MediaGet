@@ -115,12 +115,13 @@ class QueueView:
                       horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             alignment=ft.Alignment.CENTER, expand=True,
         )
-        self.summary = ft.Text(size=13, color=ft.Colors.ON_SURFACE_VARIANT, expand=True)
+        self.summary = ft.Text(size=13, color=ft.Colors.ON_SURFACE_VARIANT)
         self.view = ft.Column([
-            ft.Row([self.summary,
-                    ft.TextButton("Cancelar todos", icon=ft.Icons.STOP_CIRCLE, on_click=self.cancel_all),
+            self.summary,
+            ft.Row([ft.TextButton("Cancelar todos", icon=ft.Icons.STOP_CIRCLE, on_click=self.cancel_all),
                     ft.TextButton("Limpar concluídos", icon=ft.Icons.CLEAR_ALL,
-                                  on_click=lambda e: ctx.manager.clear_finished())]),
+                                  on_click=lambda e: ctx.manager.clear_finished())],
+                   wrap=True, spacing=0),
             self.list,
             self.empty,
         ], expand=True)

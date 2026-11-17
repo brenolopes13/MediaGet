@@ -18,6 +18,11 @@ try:
 except Exception:  # pragma: no cover
     fta = None
 
+try:  # player de vídeo embutido (só no Android, onde não há "abrir no player do sistema")
+    import flet_video as fv
+except Exception:  # pragma: no cover
+    fv = None
+
 
 def cover_image(ctx: AppContext, path: str, size: float, radius: float = 8, icon=ft.Icons.MUSIC_NOTE,
                 expand: bool = False) -> ft.Control:
@@ -158,12 +163,23 @@ class Player:
         self.position_ms = 0
         self.duration_ms = int(t.duration * 1000)
         if t.kind == "video" or self.audio is None:
-            # vídeo (ou sem suporte a áudio): abre no player do sistema
+            # vídeo: no PC abre no player do sistema; no celular, num player dentro do app
+            if self.playing and self.audio is not None:
+                self.ctx.page.run_task(self.audio.pause)
+            self.playing = False
             if lib.can_open_externally():
                 lib.open_external(t.path)
+            elif fv is not None:
+                self._show_video(t)
+            elif self.audio is not None:  # sem player de vídeo: toca só o som
+                self.audio.src = t.path
+                self.playing = True
+                self._render()
+                self._notify()
+                self.ctx.page.run_task(self._play_async)
+                return
             else:
                 self.ctx.toast("Este arquivo não pode ser tocado aqui.", error=True)
-            self.playing = False
             self._render()
             self._notify()
             return
@@ -172,6 +188,19 @@ class Player:
         self._render()
         self._notify()
         self.ctx.page.run_task(self._play_async)
+
+    def _show_video(self, t: Track):
+        video = fv.Video(playlist=[fv.VideoMedia(resource=t.path)], autoplay=True, expand=True,
+                         fill_color=ft.Colors.BLACK,
+                         on_complete=lambda e: self.ctx.close_dialog(),
+                         on_error=lambda e: self.ctx.toast(f"Não foi possível tocar o vídeo: {e.data}", error=True))
+        self.ctx.page.show_dialog(ft.AlertDialog(
+            title=ft.Text(t.display_title, max_lines=2, overflow=ft.TextOverflow.ELLIPSIS, size=16),
+            content=ft.Container(video, width=900, height=520, bgcolor=ft.Colors.BLACK),
+            content_padding=ft.Padding.symmetric(horizontal=8, vertical=8),
+            inset_padding=ft.Padding.symmetric(horizontal=8, vertical=24),
+            actions=[ft.TextButton("Fechar", on_click=self.ctx.close_dialog)],
+        ))
 
     async def _play_async(self):
         try:
@@ -184,6 +213,9 @@ class Player:
 
     def toggle(self, e=None):
         if self.current is None or self.audio is None:
+            return
+        if self.current.kind == "video" and not self.playing:  # vídeo: reabre o player de vídeo
+            self._load_current()
             return
         self.ctx.page.run_task(self._pause_async if self.playing else self._resume_async)
 

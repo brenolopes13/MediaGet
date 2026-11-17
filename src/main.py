@@ -127,13 +127,25 @@ def main(page: ft.Page):
     layout()
 
     # loop leve para manter o contador "baixando" atualizado enquanto a fila trabalha
+    # mantém a tela ligada enquanto baixa (no celular, com a tela apagada o Android corta a rede do app)
+    wakelock = ft.Wakelock()
+    page.services.append(wakelock)
+
     async def ticker():
         import asyncio
 
         last = None
+        awake = False
         while True:
             await asyncio.sleep(1)
             update_badge()
+            busy = manager.active_count > 0
+            if busy != awake:
+                awake = busy
+                try:
+                    await (wakelock.enable() if busy else wakelock.disable())
+                except Exception:
+                    pass
             if badge.value != last:
                 last = badge.value
                 queue.summary.value = f"{len(manager.jobs)} download(s) · {manager.active_count} em andamento"

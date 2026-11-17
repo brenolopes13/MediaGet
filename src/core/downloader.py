@@ -244,8 +244,17 @@ def build_ydl_opts(o: DownloadOptions) -> tuple[dict, list[str]]:
         "windowsfilenames": True,
         "trim_file_name": 180,
         "continuedl": True,
-        "retries": 10,
-        "fragment_retries": 10,
+        # Sem rede por um tempo (ex.: celular com a tela apagada): espera cada vez mais entre as
+        # tentativas (até 30 s) em vez de desistir em poucos segundos.
+        "retries": 20,
+        "fragment_retries": 20,
+        "extractor_retries": 5,
+        "socket_timeout": 30,
+        "retry_sleep_functions": {
+            "http": lambda n: min(2 ** n, 30),
+            "fragment": lambda n: min(2 ** n, 30),
+            "extractor": lambda n: min(5 * (n + 1), 30),
+        },
         "concurrent_fragment_downloads": 4,
         "overwrites": False,
         "quiet": True,
@@ -444,8 +453,32 @@ class DownloadJob:
         self._emit(force=True)
         try:
             os.makedirs(o.base_dir, exist_ok=True)
-            with yt_dlp.YoutubeDL(opts) as ydl:
-                ret = ydl.download([o.url])
+            attempt = 0
+            while True:
+                try:
+                    with yt_dlp.YoutubeDL(opts) as ydl:
+                        ret = ydl.download([o.url])
+                except DownloadCancelled:
+                    raise
+                except Exception as ex:
+                    ret, err = 1, str(ex)
+                else:
+                    err = self.errors[-1] if ret and self.errors else ""
+                # queda de rede: espera e continua de onde parou (até 5 vezes)
+                if (ret and attempt < 5 and _is_network_error(err) and not self._cancel.is_set()):
+                    attempt += 1
+                    self.detail = f"Sem conexão, tentando de novo ({attempt}/5)…"
+                    self._emit(force=True)
+                    for _ in range(20):
+                        if self._cancel.is_set():
+                            raise DownloadCancelled()
+                        time.sleep(1)
+                    if err in self.errors:
+                        self.errors.remove(err)
+                    continue
+                if ret and err and not self.files and err not in self.errors:
+                    raise RuntimeError(err)
+                break
             if self._cancel.is_set():
                 self.status = "cancelado"
             elif ret and not self.files:
@@ -469,6 +502,17 @@ class DownloadJob:
             self.detail = msg[:300]
         self.speed = self.eta = ""
         self._emit(force=True)
+
+
+_NET_ERRORS = ("errno 7", "no address associated", "network is unreachable", "name or service not known",
+               "temporary failure in name resolution", "timed out", "connection reset", "connection aborted",
+               "connection refused", "remote end closed", "errno 101", "errno 110", "errno 104",
+               "getaddrinfo failed")
+
+
+def _is_network_error(msg: str) -> bool:
+    m = (msg or "").lower()
+    return any(k in m for k in _NET_ERRORS)
 
 
 class DownloadManager:
