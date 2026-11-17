@@ -27,8 +27,10 @@ jobs:
       - name: Dependências do Flutter para Linux
         run: |
           sudo apt-get update
+          # no Ubuntu 22.04 o libunwind-dev precisa vir antes do GStreamer (conflito de pacotes)
+          sudo apt-get install -y libunwind-dev
           sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
-            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libmpv-dev mpv
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
       - run: pip install "flet[all]==${FLET_VERSION}"
       - name: flet build linux
         run: flet build linux --yes --verbose
