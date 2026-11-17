@@ -11,4 +11,8 @@ MediaGet-Windows-x64/
 storage/
 .flet/
 out/
+assinatura-android/
+*.p12
+*.jks
+*.keystore
 .ffmpeg-build/

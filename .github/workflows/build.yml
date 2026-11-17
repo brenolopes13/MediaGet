@@ -72,8 +72,28 @@ jobs:
           cp -r out/jniLibs/* build/flutter/android/app/src/main/jniLibs/
           find build/flutter/android/app/src/main/jniLibs -type f -exec ls -la {} \;
       - run: pip install "flet[all]==${FLET_VERSION}"
+      - name: Chave de assinatura (sempre a mesma, para o app atualizar por cima)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PW: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KS_B64" ]; then
+            echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.p12"
+            {
+              echo "FLET_ANDROID_SIGNING_KEY_STORE=$RUNNER_TEMP/release.p12"
+              echo "FLET_ANDROID_SIGNING_KEY_STORE_PASSWORD=$KS_PW"
+              echo "FLET_ANDROID_SIGNING_KEY_PASSWORD=$KS_PW"
+              echo "FLET_ANDROID_SIGNING_KEY_ALIAS=mediaget"
+            } >> "$GITHUB_ENV"
+          else
+            echo "Sem chave configurada: usando a chave de depuração."
+          fi
       - name: flet build apk
         run: flet build apk --yes --verbose
+      - name: Conferir assinatura
+        run: |
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | sort -V | tail -1)
+          $APKSIGNER verify --print-certs build/apk/*.apk | head -5
       - name: Conferir ffmpeg dentro do APK
         run: unzip -l build/apk/*.apk | grep libffmpeg.so
       - name: Empacotar
